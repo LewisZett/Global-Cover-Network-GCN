@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Contract Simulation | GlobalCoverPi</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background: #f4f6f8; padding: 2rem; }
+    h1 { color: #5c4dff; }
+    pre { background: #fff; padding: 1rem; border-radius: 8px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>Smart Contract Simulation</h1>
+  <pre>
+contract FuneralCover {
+  mapping(address => uint) public contributions;
+  mapping(address => bool) public isCovered;
+
+  function contribute() public payable {
+    contributions[msg.sender] += msg.value;
+    if (contributions[msg.sender] >= 10) {
+      isCovered[msg.sender] = true;
+    }
+  }
+
+  function claim(address member) public {
+    require(isCovered[member], "Not covered");
+    // payout logic here
+  }
+}
+  </pre>
+</body>
+</html>
