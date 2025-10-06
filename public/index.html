@@ -1,1 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Global Cover Network (GCN) - Pi Integration</title>
+  <!-- Pi Network SDK -->
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <script>
+    // Initialize Pi SDK (set sandbox: true for local development/testing)
+    Pi.init({ version: "2.0", sandbox: false });
 
+    // Handle incomplete Pi payments (optional, required for payment flow)
+    function onIncompletePaymentFound(payment) {
+      alert("Incomplete payment found! Payment id: " + payment.identifier);
+    }
+
+    // Sign in with Pi
+    async function signInWithPi() {
+      try {
+        const scopes = ["username", "payments"];
+        const authResult = await Pi.authenticate(scopes, onIncompletePaymentFound);
+
+        // Send authResult to backend for verification
+        const response = await fetch("http://localhost:3001/signin", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ authResult })
+        });
+        const data = await response.json();
+        if (data.success) {
+          alert("Signed in as @" + data.user.username);
+        } else {
+          alert("Sign in failed: " + data.message);
+        }
+      } catch (err) {
+        alert("Sign in error: " + err.message);
+      }
+    }
+
+    // Pay with Pi
+    async function payWithPi() {
+      try {
+        // Demo: request payment for 1 Pi
+        const paymentData = {
+          amount: 1,
+          memo: "GCN test payment",
+          metadata: { custom: "value" }
+        };
+
+        // Request payment from backend to get payment id
+        const response = await fetch("http://localhost:3001/create-payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(paymentData)
+        });
+        const { payment } = await response.json();
+
+        // Start payment with Pi SDK
+        Pi.createPayment(payment, {
+          onReadyForServerApproval: (paymentId) => {
+            // Optionally notify user or update UI
+            console.log("Ready for server approval", paymentId);
+          },
+          onReadyForServerCompletion: (paymentId, txid) => {
+            // Optionally notify user or update UI
+            console.log("Ready for server completion", paymentId, txid);
+          },
+          onCancel: (paymentId) => {
+            alert("Payment cancelled: " + paymentId);
+          },
+          onError: (error, paymentId) => {
+            alert("Payment error: " + error + " (id: " + paymentId + ")");
+          },
+          onIncompletePaymentFound
+        });
+      } catch (err) {
+        alert("Payment error: " + err.message);
+      }
+    }
+  </script>
+</head>
+<body>
+  <h1>Global Cover Network (GCN)</h1>
+  <button onclick="signInWithPi()">Sign In with Pi Network</button>
+  <button onclick="payWithPi()">Pay with Pi</button>
+</body>
+</html>
